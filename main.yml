@@ -1,18 +1,18 @@
 ---
-# vim: noai:et:ts=2:sw=2
+# vim: noai:et:ts=2:sw=2:cursorline:cursorcolumn
 - name: Deploy SAMBA 4 AD Primary Domain Controller and generate a keytab for joining hosts
   hosts: localhost
   become: true
   vars:
-    ad_joiner_user: "ad-joiner3"
+    ad_joiner_user: "ad-joiner"
     ad_joiner_pass: "FakePass 123"
 
     ad_joiner_ldiff: "/tmp/{{ ad_joiner_user }}.ldiff"
     ad_joiner_keytab: "/tmp/{{ ad_joiner_user }}.keytab"
 
-    ad_admin_pass: "FakePass 124"
+    ad_admin_pass: "FakePass 123"
 
-    ad_domain: lab4
+    ad_domain: c7
     ad_tld: priv
     ad_realm: "{{ ad_domain }}.{{ ad_tld }}"
     ad_realm_ok: "{{ ad_realm | upper }}"
@@ -50,6 +50,12 @@
         file: external_repos
         baseurl: http://samba.tranquil.it/centos7/stable/
         gpgcheck: no
+      when: ansible_distribution_file_variety == "RedHat"
+
+    - name: Add EPEL repository
+      yum:
+        name: epel-release
+        state: latest
       when: ansible_distribution_file_variety == "RedHat"
 
     - name: Install required packages
