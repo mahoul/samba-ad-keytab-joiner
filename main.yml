@@ -1,0 +1,133 @@
+---
+# vim: noai:et:ts=2:sw=2
+- name: Deploy SAMBA 4 AD Primary Domain Controller and generate a keytab for joining hosts
+  hosts: localhost
+  become: true
+  vars:
+    ad_joiner_user: "ad-joiner3"
+    ad_joiner_pass: "FakePass 123"
+
+    ad_joiner_ldiff: "/tmp/{{ ad_joiner_user }}.ldiff"
+    ad_joiner_keytab: "/tmp/{{ ad_joiner_user }}.keytab"
+
+    ad_admin_pass: "FakePass 124"
+
+    ad_domain: lab4
+    ad_tld: priv
+    ad_realm: "{{ ad_domain }}.{{ ad_tld }}"
+    ad_realm_ok: "{{ ad_realm | upper }}"
+    ad_domain_ok: "{{ ad_domain | upper }}"
+
+    ad_keytab_spn: "host/serverLinux.{{ ansible_domain }}"
+    ad_keytab_upn: "host/serverLinux.{{ ansible_domain }}@{{ ad_realm_ok }}"
+
+    ad_ipv4: "{{ lookup('vars', 'ansible_' + ansible_default_ipv4.interface).ipv4.address }}"
+    ad_ipv6: "{{ lookup('vars', 'ansible_' + ansible_default_ipv4.interface).ipv6[0].address }}"
+
+    files_to_remove:
+      - /etc/krb5.conf
+      - /etc/samba/smb.conf
+    required_packages:
+      - authconfig 
+      - bind-utils 
+      - git
+      - krb5-workstation 
+      - ldb-tools
+      - net-tools 
+      - samba 
+      - samba-dc 
+      - vim 
+      - wget
+  tasks:
+#    - name: Debug ad_realm_ok
+#      fail:
+#        msg: "{{ ad_ipv4 }} {{ ad_ipv6 }}"
+
+    - name: Add required repositories
+      yum_repository:
+        name: samba-tranquil-it
+        description: samba.tranquil.it SAMBA packages for CentOS 7
+        file: external_repos
+        baseurl: http://samba.tranquil.it/centos7/stable/
+        gpgcheck: no
+      when: ansible_distribution_file_variety == "RedHat"
+
+    - name: Install required packages
+      yum:
+        name: "{{ required_packages }}"
+        state: latest
+
+    - name: Remove old config files
+      file:
+        state: absent
+        path: "{{ item }}"
+      with_items: "{{ files_to_remove }}"
+
+    - name: Remove old samba config
+      shell: rm -fr /var/lib/samba/*
+
+    - name: Launch Samba AD domain provision
+      shell: >
+        samba-tool domain provision
+        --realm {{ ad_realm_ok }}
+        --domain {{ ad_domain_ok }}
+        --adminpass "{{ ad_admin_pass }}"
+        --server-role=dc
+        --use-rfc2307
+        --host-ip={{ ad_ipv4 }}
+        --host-ip6={{ ad_ipv6 }}
+        --option="dns forwarder = {{ ansible_dns.nameservers[0] }}"
+      register: samba-provision-log
+
+    - name: Link krb5 configuration
+      file:
+        src: /var/lib/samba/private/krb5.conf
+        dest: /etc/krb5.conf
+        state: link
+
+    - name: Restart samba service
+      service: 
+        name: samba
+        state: restarted
+
+    - name: Create user to link to keytab
+      shell: >
+        samba-tool user create {{ ad_joiner_user }} "{{ ad_joiner_pass }}"
+
+    - name: Get DN of user {{ ad_joiner_user }}
+      shell: >
+        LDB_MODULES_PATH=/usr/lib64/samba/ldb ldbsearch -H /var/lib/samba/private/sam.ldb '(name={{ ad_joiner_user }})' | grep '^dn'
+      register: test_out
+      tags: test
+
+    - name: Set ad_joiner_user_dn
+      set_fact:
+        ad_joiner_user_dn: "{{ test_out.stdout }}"
+      tags: test
+
+    - name: Debug test_out
+      debug:
+        msg: "{{ ad_joiner_user_dn }}"
+      tags: test
+
+    - name: Render LDIFF file to alter userPrincipalName
+      template:
+        src: templates/ad_joiner_user.ldiff.j2
+        dest: "{{ ad_joiner_ldiff }}"
+      tags: test
+
+    - name: Alter userPrincipalName for user {{ ad_joiner_user }}
+      shell: >
+        LDB_MODULES_PATH=/usr/lib64/samba/ldb ldbmodify -H /var/lib/samba/private/sam.ldb {{ ad_joiner_ldiff }}
+      tags: test
+
+    - name: Add SPN to {{ ad_joiner_user }}
+      shell: >
+        samba-tool spn add {{ ad_keytab_spn }} {{ ad_joiner_user }}
+      tags: test
+
+    - name: Export keytab
+      shell: >
+        samba-tool domain exportkeytab {{ ad_joiner_keytab }} --principal={{ ad_keytab_spn }}
+      tags: test
+

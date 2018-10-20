@@ -1,0 +1,7 @@
+{{ ad_joiner_user_dn }}
+changetype: modify
+-
+replace: userPrincipalName
+userPrincipalName: {{ ad_keytab_upn }}
+-
+
