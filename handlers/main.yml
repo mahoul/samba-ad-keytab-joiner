@@ -1,0 +1,7 @@
+---
+# handlers file for mahoul/samba-ad-keytab-joiner
+- name: restart samba
+  service:
+    name: samba
+    state: restarted
+

@@ -1,0 +1,20 @@
+---
+
+# vim: cursorcolumn cursorline cc=80 ts=2 sw=2 ai
+
+- name: Install required packages
+  import_tasks: install-required-packages.yml
+
+- name: Remove old configuration
+  import_tasks: remove-old-configuration.yml
+
+- name: Provision SAMBA AD
+  import_tasks: provision-samba-ad.yml
+
+- name: Create and patch AD joiner user
+  import_tasks: create-n-patch-ad-joiner-user.yml
+
+- name: Export keytab
+  import_tasks: export-keytab.yml
+
+  

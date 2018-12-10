@@ -1,0 +1,13 @@
+---
+
+# vim: cursorcolumn cursorline cc=80 ts=2 sw=2 ai
+
+- name: Remove old config files
+  file:
+    state: absent
+    path: "{{ item }}"
+  with_items: "{{ files_to_remove }}"
+
+- name: Remove old samba config
+  shell: rm -fr /var/lib/samba/* warn=False
+

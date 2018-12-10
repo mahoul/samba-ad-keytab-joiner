@@ -1,0 +1,24 @@
+---
+
+# vim: cursorcolumn cursorline cc=80 ts=2 sw=2 ai
+
+- name: Add Tranquil IT SAMBA repository
+  yum_repository:
+    name: samba-tranquil-it
+    description: samba.tranquil.it SAMBA packages for CentOS 7
+    file: external_repos
+    baseurl: http://samba.tranquil.it/centos7/stable/
+    gpgcheck: no
+  when: ansible_distribution_file_variety == "RedHat" and ansible_distribution == 'CentOS'
+
+- name: Add EPEL repository
+  yum:
+    name: epel-release
+    state: latest
+  when: ansible_distribution_file_variety == "RedHat" and ansible_distribution == 'CentOS'
+
+- name: Install required packages
+  yum:
+    name: "{{ required_packages }}"
+    state: latest
+

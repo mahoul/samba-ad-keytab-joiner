@@ -1,0 +1,41 @@
+---
+# defaults file for mahoul/samba-ad-keytab-joiner
+
+ad_joiner_user: "ad-joiner"
+ad_joiner_pass: "FakePass 123"
+
+ad_joiner_ldiff: "/tmp/{{ ad_joiner_user }}.ldiff"
+ad_joiner_keytab: "/tmp/{{ ad_joiner_user }}.keytab"
+
+ad_admin_pass: "FakePass 123"
+
+ad_domain: c7
+ad_tld: priv
+ad_realm: "{{ ad_domain }}.{{ ad_tld }}"
+ad_realm_ok: "{{ ad_realm | upper }}"
+ad_domain_ok: "{{ ad_domain | upper }}"
+
+ad_keytab_spn: "host/serverLinux.{{ ansible_domain }}"
+ad_keytab_upn: "host/serverLinux.{{ ansible_domain }}@{{ ad_realm_ok }}"
+
+ad_ipv4: "{{ lookup('vars', 'ansible_' + ansible_default_ipv4.interface).ipv4.address }}"
+ad_ipv6: "{{ lookup('vars', 'ansible_' + ansible_default_ipv4.interface).ipv6[0].address }}"
+
+files_to_remove:
+  - /etc/krb5.conf
+  - /etc/samba/smb.conf
+  - "{{ ad_joiner_ldiff }}"
+  - "{{ ad_joiner_keytab }}"
+required_packages:
+  - authconfig
+  - bind-utils
+  - git
+  - krb5-workstation
+  - ldb-tools
+  - libselinux-python
+  - net-tools
+  - samba
+  - samba-dc
+  - vim
+  - wget
+

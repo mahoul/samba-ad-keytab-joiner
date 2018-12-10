@@ -1,0 +1,35 @@
+---
+
+# vim: cursorcolumn cursorline cc=80 ts=2 sw=2 ai
+
+- name: Create user to link to keytab
+  shell: >
+    samba-tool user create {{ ad_joiner_user }} "{{ ad_joiner_pass }}"
+
+- name: Get DN of user {{ ad_joiner_user }}
+  shell: >
+    LDB_MODULES_PATH=/usr/lib64/samba/ldb ldbsearch -H /var/lib/samba/private/sam.ldb '(name={{ ad_joiner_user }})' | grep '^dn'
+  register: user_dn
+  tags: test
+
+- name: Set ad_joiner_user_dn
+  set_fact:
+    ad_joiner_user_dn: "{{ user_dn.stdout }}"
+  tags: test
+
+- name: Render {{ ad_joiner_ldiff }} LDIFF file to alter userPrincipalName
+  template:
+    src: templates/ad_joiner_user.ldiff.j2
+    dest: "{{ ad_joiner_ldiff }}"
+  tags: test
+
+- name: Alter userPrincipalName for user {{ ad_joiner_user }}
+  shell: >
+    LDB_MODULES_PATH=/usr/lib64/samba/ldb ldbmodify -H /var/lib/samba/private/sam.ldb {{ ad_joiner_ldiff }}
+  tags: test
+
+- name: Add SPN to {{ ad_joiner_user }}
+  shell: >
+    samba-tool spn add {{ ad_keytab_spn }} {{ ad_joiner_user }}
+  tags: test
+

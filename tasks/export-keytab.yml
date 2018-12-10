@@ -1,0 +1,9 @@
+---
+
+# vim: cursorcolumn cursorline cc=80 ts=2 sw=2 ai
+
+- name: Export keytab to {{ ad_joiner_keytab }}
+  shell: >
+    samba-tool domain exportkeytab {{ ad_joiner_keytab }} --principal={{ ad_keytab_spn }}
+  tags: test
+
