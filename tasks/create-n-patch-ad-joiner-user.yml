@@ -6,6 +6,10 @@
   shell: >
     samba-tool user create {{ ad_joiner_user }} "{{ ad_joiner_pass }}"
 
+- name: Set account expiration to no expire
+  shell: >
+    samba-tool user setexpiry --noexpiry {{ ad_joiner_user }}
+
 - name: Get DN of user {{ ad_joiner_user }}
   shell: >
     LDB_MODULES_PATH=/usr/lib64/samba/ldb ldbsearch -H /var/lib/samba/private/sam.ldb '(name={{ ad_joiner_user }})' | grep '^dn'
