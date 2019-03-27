@@ -17,6 +17,18 @@
     state: latest
   when: ansible_distribution_file_variety == "RedHat" and ansible_distribution == 'CentOS'
 
+- name: Remove conflicting packages
+  yum:
+    name: pytalloc
+    state: absent
+  when: ansible_distribution_file_variety == "RedHat" and ansible_distribution == 'CentOS'
+
+- name: Install required dependencies
+  yum:
+    name: python2-talloc
+    state: latest
+  when: ansible_distribution_file_variety == "RedHat" and ansible_distribution == 'CentOS'
+
 - name: Install required packages
   yum:
     name: "{{ required_packages }}"
