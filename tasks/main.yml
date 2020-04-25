@@ -2,6 +2,10 @@
 
 # vim: cursorcolumn cursorline cc=80 ts=2 sw=2 ai
 
+- name: debug
+  debug:
+    msg: "{{ ad_iface }}"
+
 - name: Install required packages
   import_tasks: install-required-packages.yml
 

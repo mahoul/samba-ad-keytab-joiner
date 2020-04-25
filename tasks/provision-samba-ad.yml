@@ -13,6 +13,8 @@
     --host-ip={{ ad_ipv4 }}
     --host-ip6={{ ad_ipv6 }}
     --option="dns forwarder = {{ ansible_dns.nameservers[0] }}"
+    --option="interfaces=lo {{ ad_iface }}"
+    --option="bind interfaces only=yes"
   register: samba-provision-log
 
 - name: Link krb5 configuration

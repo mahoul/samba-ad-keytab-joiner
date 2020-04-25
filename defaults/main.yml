@@ -20,6 +20,7 @@ ad_keytab_upn: "host/serverLinux.{{ ansible_domain }}@{{ ad_realm_ok }}"
 
 ad_ipv4: "{{ lookup('vars', 'ansible_' + ansible_default_ipv4.interface).ipv4.address }}"
 ad_ipv6: "{{ lookup('vars', 'ansible_' + ansible_default_ipv4.interface).ipv6[0].address }}"
+ad_iface: "{{ ansible_default_ipv4.interface }}"
 
 files_to_remove:
   - /etc/krb5.conf
